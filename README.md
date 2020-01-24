@@ -11,8 +11,8 @@ I added the Following
 - Added that if a player found a blocked bike and he have money, then he can unlock that bike and use it
 
 #Requirements
-es_extended
-LegacyFuel
+- es_extended
+- LegacyFuel
 
 original thread and repository
 https://forum.fivem.net/t/release-esx-bike-rental-v5/116465

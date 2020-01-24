@@ -67,14 +67,16 @@ Citizen.CreateThread(function()
 			--local distance = Vdist(pedcoords.x, pedcoords.y, pedcoords.z, Config.MarkerZones[k].x, Config.MarkerZones[k].y, Config.MarkerZones[k].z)
 			local distance = Vdist(pedcoords.x, pedcoords.y, pedcoords.z, v.x, v.y, v.z)
             if distance <= 1.40 then
-				if havebike == false then
+				if not havebike then
 
 					helptext(_U('press_e'))
 					
 					if IsControlJustPressed(0, Keys['E']) and IsPedOnFoot(ped) then
 						OpenBikesMenu()
+					elseif IsControlJustPressed(0, Keys['E']) and not IsPedOnFoot(ped) then
+						ESX.ShowNotification('¡Debes estar de a pie!')
 					end 
-				elseif havebike == true then
+				else
 
 					helptext(_U('storebike'))
 
@@ -88,7 +90,6 @@ Citizen.CreateThread(function()
 							TriggerEvent("chatMessage", _U('bikes'), {255,255,0}, _U('bikemessage'))
 						end
 						--cobrar()
-						--TerminateThread(threadID)
 					elseif IsControlJustPressed(0, Keys['E']) and not IsPedOnAnyBike(ped) then
 						if Config.EnableEffects then
 							ESX.ShowNotification(_U('notabike'))
@@ -184,13 +185,14 @@ RegisterNetEvent('esx_bike:blockBike')
 AddEventHandler('esx_bike:blockBike', function()
 	havebike = false
 	--SetVehicleUndriveable(bicicleta, true)
-	--TriggerEvent('EngineToggle:RPDamage', true)
-	FreezeEntityPosition(bicicleta, true)
+	--FreezeEntityPosition(bicicleta, true)
+	--TriggerEvent('EngineToggle:RPDamage', false)
 	--SetVehicleBrake(bicicleta, true)	
+	--SetEntityMaxSpeed(bicicleta, 0.1) 
+	SetVehicleMaxSpeed(bicicleta, 0.1)
 	SetVehicleNumberPlateText(bicicleta, 'BLOQUEAD')
 	local plate = GetVehicleNumberPlateText(bicicleta)
 	print(plate)
-	print(IsThreadActive(threadID))
 end)
 
 RegisterNetEvent('esx_bike:unblockBike')
@@ -198,7 +200,8 @@ AddEventHandler('esx_bike:unblockBike', function()
 	havebike = true
 	local ped = GetPlayerPed(-1)
 	local bike = GetVehiclePedIsIn(ped)
-	SetVehicleUndriveable(bike, false)	
+	local maxSpeed = GetVehicleHandlingFloat(bike,"CHandlingData","fInitialDriveMaxFlatVel")
+	--SetVehicleUndriveable(bike, false)	
 	SetVehicleNumberPlateText(bike, 'RENTADO')
 	local plate = GetVehicleNumberPlateText(bike)
 	print(plate)
@@ -209,7 +212,9 @@ AddEventHandler('esx_bike:unblockBike', function()
 	else
 		cobroxMinuto = Config.CobroBike
 	end
-	FreezeEntityPosition(bike, false)
+	--SetEntityMaxSpeed(bike, maxSpeed) 
+	SetVehicleMaxSpeed(bike, maxSpeed)
+	--FreezeEntityPosition(bike, false)
 	--cobrar()
 end)
 
@@ -265,14 +270,14 @@ Citizen.CreateThread(function()
 		Citizen.Wait(10)
 		if havebike then
 			t = t + 10
-			if t ~= 0 and t%1000 == 0 then
-				print((t/1000)..' segundos')
-			end 
-			if t ~= 0 and t%(rentalTimer) == 0 then
+			--if t ~= 0 and t%1000 == 0 then
+				--print((t/1000)..' segundos')
+			--end 
+			if t ~= 0 and t%(20000) == 0 then --rentalTimer
 				TriggerServerEvent("esx_bike:chargePlayer", cobroxMinuto)
 				t = 0
 			end
-		else
+		elseif not havebike and t ~= 0 then
 			t = 0
 		end
 	end
@@ -280,26 +285,30 @@ end)
 
 Citizen.CreateThread(function()
 	while true do
-		Citizen.Wait(1)
-		local ped = GetPlayerPed(-1)
-		local bike = GetVehiclePedIsIn(ped)
-		local bikeProps = ESX.Game.GetVehicleProperties(bike)
-		local name = GetDisplayNameFromVehicleModel(bikeProps.model)
-		--if bike ~= 0 and IsCycle(bike) and bike.plate == 'BLOQUEADO' then
-		if bike ~= 0 and IsPedOnAnyBike(ped) and GetVehicleNumberPlateText(bike) == 'BLOQUEAD' and not havebike then
-			helptext('Presiona ~INPUT_CONTEXT~ para rentar este vehículo.')
-			if IsControlJustPressed(0, Keys['E']) and IsPedOnAnyBike(ped) then
-				print(name)
-				if name == 'TRIBIKE2' then
-					TriggerServerEvent("esx_bike:unblock", Config.PriceTriBike) 
-				elseif name == 'SCORCHER' then
-					TriggerServerEvent("esx_bike:unblock", Config.PriceScorcher) 
-				elseif name == 'CRUISER' then
-					TriggerServerEvent("esx_bike:unblock", Config.PriceCruiser) 
-				elseif name == 'BMX' then
-					TriggerServerEvent("esx_bike:unblock", Config.PriceBmx) 
-				elseif name == 'FAGGION' then
-					TriggerServerEvent("esx_bike:unblock", Config.PriceFaggio) 
+		Citizen.Wait(5)
+		if IsPedOnAnyBike(GetPlayerPed(-1)) then
+			local ped = GetPlayerPed(-1)
+			local bike = GetVehiclePedIsIn(ped)
+			local bikeProps = ESX.Game.GetVehicleProperties(bike)
+			local name = GetDisplayNameFromVehicleModel(bikeProps.model)
+			--if bike ~= 0 and IsCycle(bike) and bike.plate == 'BLOQUEADO' then
+			if GetVehicleNumberPlateText(bike) == 'BLOQUEAD' and not havebike then
+				--SetEntityMaxSpeed(bike, 0.1)
+				--SetVehicleMaxSpeed(bike, 0.1)
+				helptext('Presiona ~INPUT_CONTEXT~ para rentar este vehículo.')
+				if IsControlJustPressed(0, Keys['E']) and IsPedOnAnyBike(ped) then
+					--print(name)
+					if name == 'TRIBIKE2' then
+						TriggerServerEvent("esx_bike:unblock", Config.PriceTriBike) 
+					elseif name == 'SCORCHER' then
+						TriggerServerEvent("esx_bike:unblock", Config.PriceScorcher) 
+					elseif name == 'CRUISER' then
+						TriggerServerEvent("esx_bike:unblock", Config.PriceCruiser) 
+					elseif name == 'BMX' then
+						TriggerServerEvent("esx_bike:unblock", Config.PriceBmx) 
+					elseif name == 'FAGGION' then
+						TriggerServerEvent("esx_bike:unblock", Config.PriceFaggio) 
+					end
 				end
 			end
 		end
