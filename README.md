@@ -1,7 +1,5 @@
 # esx_bike-rental
 
-#IMPORTANT, THIS SCRIPT IS RESOURCE HEAVY, SOON I WILL OPTIMIZE IT
-
 I added the Following
 
 - Disable Attack when in menu
