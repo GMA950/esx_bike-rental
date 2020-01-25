@@ -27,6 +27,9 @@ local cobroxMinuto = 0
 local bicicleta = nil
 local rentalTimer = Config.RentalTimer*60*1000
 
+--DecorRegister("bloqueado", 2)
+
+
 Citizen.CreateThread(function()
 
 	if not Config.EnableBlips then return end
@@ -98,7 +101,7 @@ Citizen.CreateThread(function()
 						end
 					end 		
 				end
-			elseif distance < 1.45 then
+			elseif distance < 1.45 and inMenu then
 				inMenu = false
 				ESX.UI.Menu.CloseAll()
             end
@@ -231,6 +234,7 @@ function spawn_effect(somecar)
 	Citizen.Wait(1000)
 	ESX.Game.SpawnVehicle(somecar, GetOffsetFromEntityInWorldCoords(ped, 0.0, 0.0, 0.0), GetEntityHeading(ped), function(vehicle) --90 ,GetEntityHeading(ped)
 		SetVehicleNumberPlateText(vehicle, 'RENTADO')
+		--DecorSetBool(vehicle, "bloqueado", false)
 		TaskWarpPedIntoVehicle(ped,  vehicle, -1)
 		bicicleta = vehicle
 		if somecar == 'faggio' then
@@ -273,7 +277,7 @@ Citizen.CreateThread(function()
 			--if t ~= 0 and t%1000 == 0 then
 				--print((t/1000)..' segundos')
 			--end 
-			if t ~= 0 and t%(20000) == 0 then --rentalTimer
+			if t ~= 0 and t%(rentalTimer) == 0 then --rentalTimer
 				TriggerServerEvent("esx_bike:chargePlayer", cobroxMinuto)
 				t = 0
 			end
@@ -289,14 +293,16 @@ Citizen.CreateThread(function()
 		if IsPedOnAnyBike(GetPlayerPed(-1)) then
 			local ped = GetPlayerPed(-1)
 			local bike = GetVehiclePedIsIn(ped)
-			local bikeProps = ESX.Game.GetVehicleProperties(bike)
-			local name = GetDisplayNameFromVehicleModel(bikeProps.model)
+			--local bikeProps = ESX.Game.GetVehicleProperties(bike)
+			--local name = GetDisplayNameFromVehicleModel(bikeProps.model)
 			--if bike ~= 0 and IsCycle(bike) and bike.plate == 'BLOQUEADO' then
-			if GetVehicleNumberPlateText(bike) == 'BLOQUEAD' and not havebike then
+			if not havebike and GetVehicleNumberPlateText(bike) == 'BLOQUEAD' then
 				--SetEntityMaxSpeed(bike, 0.1)
 				--SetVehicleMaxSpeed(bike, 0.1)
 				helptext('Presiona ~INPUT_CONTEXT~ para rentar este vehículo.')
 				if IsControlJustPressed(0, Keys['E']) and IsPedOnAnyBike(ped) then
+					local bikeProps = ESX.Game.GetVehicleProperties(bike)
+					local name = GetDisplayNameFromVehicleModel(bikeProps.model)
 					--print(name)
 					if name == 'TRIBIKE2' then
 						TriggerServerEvent("esx_bike:unblock", Config.PriceTriBike) 
